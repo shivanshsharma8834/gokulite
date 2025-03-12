@@ -10,6 +10,7 @@ import (
 func main() {
 	compiler := NewCompiler()
 	reader := bufio.NewReader(os.Stdin)
+	table := NewTable()
 
 	// REPL 
 	for { 
@@ -27,12 +28,11 @@ func main() {
 			}
 		} else {
 			// Handle the compiler command
-			program, err := compiler.Compile(input)
+			program, err := compiler.Compile(input, table)
 			if err != nil {
 				fmt.Println("Compilation Error: ", err)
 				continue
 			}
-			fmt.Printf("Unrecognized command: %s\n", input)
 			fmt.Println("Compiled Program", program)
 		}
 	}

@@ -2,25 +2,8 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 )
-
-type Row struct {
-	ID       int
-	Username string
-	Email    string
-}
-
-type Table struct {
-	Rows []Row
-}
-
-func NewTable() *Table {
-	return &Table{
-		Rows: make([]Row, 0),
-	}
-}
 
 type Opcode int
 const (
@@ -43,28 +26,47 @@ func NewCompiler() *Compiler {
 	return &Compiler{}
 }
 
-func (c *Compiler) Compile(input string) (*Program, error) {
+func (c *Compiler) Compile(input string, table *Table) (*Program, error) {
 	tokens := strings.Fields(input)
 	if len(tokens) == 0 {
-		return nil, fmt.Errorf("Empty Input")
+		return nil, fmt.Errorf("empty input")
 	}
 
 	program := &Program{}
 
 	switch strings.ToLower(tokens[0]) {
 	case "insert":
-		id, _ := strconv.Atoi(tokens[1])
-		program.Instructions = append(program.Instructions, Instruction{
-			Op: OpInsert,
-			Args: []interface{}{id, tokens[2], tokens[3]},
-		})
-	case "select":
-		program.Instructions = append(program.Instructions, Instruction{
-			Op: OpSelect,
-		})
+		if len(tokens) == 1 {
+			return nil, fmt.Errorf("empty insert values")
+		}
 
+		table.Rows = append(table.Rows, Row{
+			ID: tokens[1],
+			Username: tokens[2],
+			Email: tokens[3],
+		})
+		fmt.Println("Row updated successfully");
+	
+	case "select":
+		fmt.Println("Select Command");
+
+		if len(table.Rows) == 0 {
+			fmt.Println("No rows found");
+			break
+		}
+		for index, row := range table.Rows {
+			fmt.Printf("[%d] ID: %s, Username: %s, Email: %s\n", 
+            index+1,
+            row.ID, 
+            row.Username, 
+            row.Email,
+        )
+		}
+
+	case "delete":
+		fmt.Println("Delete Command");
 	default:
-		return nil, fmt.Errorf("Unrecognized command: %s", tokens[0])
+		return nil, fmt.Errorf("unrecognized command: %s", tokens[0]);
 	}
 
 	return program, nil
