@@ -13,7 +13,7 @@ type Database struct {
 	Age  int
 }
 
-func writeDatatoFile(filename string, data Database) error {
+func writeDatatoFile(filename string, data any) error {
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -23,7 +23,7 @@ func writeDatatoFile(filename string, data Database) error {
 	return encoder.Encode(data)
 }
 
-func readDatafromFile(filename string, data *Database) error {
+func readDatafromFile(filename string, data any) error {
 	file, err := os.Open(filename)
 	if err != nil {
 		return err
@@ -33,11 +33,6 @@ func readDatafromFile(filename string, data *Database) error {
 }
 
 func main() {
-
-	data := Database{
-		Name: "John",
-		Age:  32,
-	}
 
 	_, err := os.Stat("database.db")
 
@@ -51,7 +46,7 @@ func main() {
 			fmt.Println("Database file storage created successfully")
 		}
 	} else {
-		databaseFile, err = os.OpenFile("database.db", os.O_RDWR, 0666)
+		databaseFile, err = os.OpenFile("database.db", os.O_RDWR|os.O_CREATE, 0644)
 		if err != nil {
 			fmt.Println("Error loading database storage: ", err)
 		} else {
@@ -59,16 +54,10 @@ func main() {
 		}
 	}
 
-	encoder := gob.NewEncoder(databaseFile)
-	err = encoder.Encode(data)
-	if err != nil {
-		fmt.Println("Error encoding data: ", err)
-	}
-
-	var data2 Database
-	decoder := gob.NewDecoder(databaseFile)
-	decoder.Decode(&data2)
-	fmt.Println(data2.Name)
+	writeDatatoFile("database.db", Database{Name: "John", Age: 32})
+	var data any
+	readDatafromFile("database.db", data)
+	fmt.Println(data)
 
 	compiler := NewCompiler()
 	reader := bufio.NewReader(os.Stdin)
