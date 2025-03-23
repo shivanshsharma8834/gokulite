@@ -8,9 +8,17 @@ import (
 )
 
 type Statement struct {
-	statementType    string
-	statementData    []any
-	statementSuccess bool
+	Type    string
+	Data    []string
+	Success bool
+}
+
+func NewStatement() *Statement {
+	return &Statement{
+		Type:    "",
+		Data:    make([]string, 0),
+		Success: false,
+	}
 }
 
 func main() {
@@ -34,23 +42,14 @@ func main() {
 		}
 	}
 
-	compiler := NewCompiler()
 	reader := bufio.NewReader(os.Stdin)
-
 	table := NewTable()
-	table.Rows = append(table.Rows, Row{ID: "1", Username: "John", Email: "John@Gmail.com"})
-	table.Rows = append(table.Rows, Row{ID: "2", Username: "John", Email: "John@Gmail.com"})
-	table.Rows = append(table.Rows, Row{ID: "3", Username: "John", Email: "John@Gmail.com"})
 	databaseFile.Write(table.SerializeAllRows())
-
-	fileScanner := bufio.NewScanner(databaseFile)
-
-	for fileScanner.Scan() {
-		fmt.Println(fileScanner.Text())
-	}
 
 	// REPL
 	for {
+
+		statement := NewStatement()
 		fmt.Print("gokulite> ")
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(input)
@@ -73,12 +72,12 @@ func main() {
 			}
 		} else {
 			// Handle the compiler command
-			program, err := compiler.Compile(input)
+			err := Compile(input, statement)
 			if err != nil {
 				fmt.Println("Compilation Error: ", err)
 				continue
 			}
-			fmt.Println("Compiled Program", program)
+			executeStatement(statement, table)
 		}
 	}
 
