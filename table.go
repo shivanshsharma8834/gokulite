@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"os"
 )
 
@@ -13,16 +12,50 @@ type Row struct {
 	Email    string
 }
 
-func (r Row) Serialize() *bytes.Buffer {
+func (r Row) Serialize() ([]byte, error) {
 
-	var buff bytes.Buffer
-	rowByte := []byte(fmt.Sprintf("%s||%s||%s", r.ID, r.Username, r.Email))
-	binary.Write(&buff, binary.LittleEndian, rowByte)
-	return &buff
+	buf := new(bytes.Buffer)
+
+	IDBytes := []byte(r.ID)
+	if err := binary.Write(buf, binary.LittleEndian, uint16(len(IDBytes))); err != nil {
+		return nil, err
+	}
+	if err := binary.Write(buf, binary.LittleEndian, IDBytes); err != nil {
+		return nil, err
+	}
+
+	UserNameBytes := []byte(r.Username)
+	if err := binary.Write(buf, binary.LittleEndian, uint16(len(UserNameBytes))); err != nil {
+		return nil, err
+	}
+	if err := binary.Write(buf, binary.LittleEndian, UserNameBytes); err != nil {
+		return nil, err
+	}
+
+	EmailBytes := []byte(r.Email)
+	if err := binary.Write(buf, binary.LittleEndian, uint16(len(EmailBytes))); err != nil {
+		return nil, err
+	}
+	if err := binary.Write(buf, binary.LittleEndian, EmailBytes); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 type Table struct {
 	Rows []Row
+}
+
+func (t *Table) SerializeAllRows() []byte {
+	buf := new(bytes.Buffer)
+
+	for _, row := range t.Rows {
+		rowBytes, _ := row.Serialize()
+		buf.Write(rowBytes)
+	}
+
+	return buf.Bytes()
 }
 
 func NewTable() *Table {

@@ -49,7 +49,11 @@ func main() {
 
 	table := NewTable()
 	table.Rows = append(table.Rows, Row{ID: "1", Username: "John", Email: "John@Gmail.com"})
-	databaseFile.Write(table.Rows[0].Serialize().Bytes())
+	table.Rows = append(table.Rows, Row{ID: "2", Username: "John", Email: "John@Gmail.com"})
+	table.Rows = append(table.Rows, Row{ID: "3", Username: "John", Email: "John@Gmail.com"})
+	databaseFile.Write(table.SerializeAllRows())
+
+	fmt.Println(databaseFile)
 
 	// REPL
 	for {
