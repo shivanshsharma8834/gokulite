@@ -2,42 +2,32 @@ package main
 
 import (
 	"bufio"
-	"encoding/gob"
 	"fmt"
 	"os"
 	"strings"
 )
 
-type Database struct {
-	Name string
-	Age  int
-}
+func SaveData(path string, data []byte) error {
+	fp, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0664)
 
-func writeDatatoFile(filename string, data any) error {
-	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer fp.Close()
+
+	_, err = fp.Write(data)
 	if err != nil {
 		return err
 	}
 
-	encoder := gob.NewEncoder(file)
-	return encoder.Encode(data)
-}
-
-func readDatafromFile(filename string, data any) error {
-	file, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-	decoder := gob.NewDecoder(file)
-	return decoder.Decode(&data)
+	return fp.Sync()
 }
 
 func main() {
 
+	// Create and check if the database file exists
 	_, err := os.Stat("database.db")
-
 	var databaseFile *os.File
-
 	if os.IsNotExist(err) {
 		databaseFile, err = os.Create("database.db")
 		if err != nil {
@@ -54,14 +44,12 @@ func main() {
 		}
 	}
 
-	writeDatatoFile("database.db", Database{Name: "John", Age: 32})
-	var data any
-	readDatafromFile("database.db", data)
-	fmt.Println(data)
-
 	compiler := NewCompiler()
 	reader := bufio.NewReader(os.Stdin)
+
 	table := NewTable()
+	table.Rows = append(table.Rows, Row{ID: "1", Username: "John", Email: "John@Gmail.com"})
+	databaseFile.Write(table.Rows[0].Serialize().Bytes())
 
 	// REPL
 	for {
@@ -69,17 +57,25 @@ func main() {
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(input)
 
+		if len(input) == 0 {
+			fmt.Println("Error: Empty Statement")
+			continue
+		}
+
 		// Handle the Meta command
 		if input[0] == '.' {
 			if input == ".exit" {
 				fmt.Println("Exiting Gokulite. Goodbye!")
 				break
 			} else {
-				fmt.Printf("Unrecognized Meta Command: %s\n", input)
+				err = executeMetaCommand(input)
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
 		} else {
 			// Handle the compiler command
-			program, err := compiler.Compile(input, table)
+			program, err := compiler.Compile(input)
 			if err != nil {
 				fmt.Println("Compilation Error: ", err)
 				continue
